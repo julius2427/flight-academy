@@ -35,11 +35,16 @@ export default function SessionSetup() {
 
   useEffect(() => {
     supabase.from('athletes').select('*').eq('active', true).order('last_name').order('first_name').then(({ data }) => setAthletes((data as Athlete[]) ?? []))
-    Promise.all([
-      supabase.from('exercises').select('id, title, score_unit, better').order('title'),
-      supabase.from('drills').select('id, title, score_unit, better').order('title'),
-    ]).then(async ([e, d]) => {
-      const l = { exercise: (e.data ?? []) as LibItem[], drill: (d.data ?? []) as LibItem[] }
+    const loadLib = async (table: 'exercises' | 'drills'): Promise<LibItem[]> => {
+      const full = await supabase.from(table).select('id, title, score_unit, better').order('title')
+      if (!full.error) return (full.data ?? []) as LibItem[]
+      // Database update 002 not applied yet: fall back to timed/lower defaults.
+      const basic = await supabase.from(table).select('id, title').order('title')
+      if (basic.error) setError(basic.error.message)
+      return (basic.data ?? []).map((x) => ({ ...x, score_unit: 'seconds' as Unit, better: 'lower' as Better }))
+    }
+    Promise.all([loadLib('exercises'), loadLib('drills')]).then(async ([e, d]) => {
+      const l = { exercise: e, drill: d }
       setLib(l)
       if (id) return
       // New session: start from the most recent session's columns.
@@ -48,12 +53,15 @@ export default function SessionSetup() {
       const { data: its } = await supabase.from('session_items').select('*').eq('session_id', last.id)
       if (!its?.length) return
       const next = { conditioning: Array.from({ length: 6 }, emptySlot), measure: Array.from({ length: 3 }, emptySlot) }
+      let copied = 0
       for (const it of its as SessionItem[]) {
         const ref = it.exercise_id ?? it.drill_id
         const item = ref ? l[it.item_type].find((x) => x.id === ref) : undefined
         if (!item) continue // removed from the library since
         next[it.section][it.slot - 1] = { item_type: it.item_type, ref: item.id, unit: item.score_unit, better: item.better }
+        copied++
       }
+      if (!copied) return
       setSlots(next)
       setPrefilledFrom(last.session_date)
     })
@@ -183,19 +191,19 @@ export default function SessionSetup() {
             {slots[sec.key].map((s, i) => (
               <div className="slot" key={i}>
                 <span className="slot-num">{i + 1}</span>
-                <select className="select" value={s.item_type} aria-label={`${sec.title} ${i + 1} type`}
-                  onChange={(e) => setSlot(sec.key, i, { item_type: e.target.value as ItemType, ref: '' })}>
-                  <option value="exercise">Exercise</option>
-                  <option value="drill">Drill</option>
-                </select>
-                <select className="select" value={s.ref} aria-label={`${sec.title} ${i + 1}`}
+                <select className={`select ${s.ref ? '' : 'is-empty'}`} value={s.ref ? `${s.item_type}:${s.ref}` : ''} aria-label={`${sec.title} ${i + 1}`}
                   onChange={(e) => {
-                    const item = lib[s.item_type].find((x) => x.id === e.target.value)
-                    setSlot(sec.key, i, item ? { ref: item.id, unit: item.score_unit, better: item.better } : { ref: e.target.value })
+                    const v = e.target.value
+                    if (!v) return setSlot(sec.key, i, { ref: '' })
+                    const [type, ...rest] = v.split(':')
+                    const ref = rest.join(':')
+                    const item = lib[type as ItemType].find((x) => x.id === ref)
+                    setSlot(sec.key, i, item ? { item_type: type as ItemType, ref: item.id, unit: item.score_unit, better: item.better } : { item_type: type as ItemType, ref })
                   }}>
-                  <option value="">— none —</option>
-                  {s.ref.startsWith('label:') && <option value={s.ref}>{s.ref.slice(6)} (removed from library)</option>}
-                  {lib[s.item_type].map((x) => <option key={x.id} value={x.id}>{x.title}</option>)}
+                  <option value="">Choose a drill or exercise…</option>
+                  {s.ref.startsWith('label:') && <option value={`${s.item_type}:${s.ref}`}>{s.ref.slice(6)} (removed from library)</option>}
+                  {lib.exercise.length > 0 && <optgroup label="Exercises">{lib.exercise.map((x) => <option key={x.id} value={`exercise:${x.id}`}>{x.title}</option>)}</optgroup>}
+                  {lib.drill.length > 0 && <optgroup label="Drills">{lib.drill.map((x) => <option key={x.id} value={`drill:${x.id}`}>{x.title}</option>)}</optgroup>}
                 </select>
                 <span className="slot-score">{s.ref ? scoringText(s.unit, s.better) : ''}</span>
               </div>
