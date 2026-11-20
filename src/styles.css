@@ -249,19 +249,11 @@ tr:last-child td { border-bottom: 0; }
 .section h2 { font-size: clamp(1.8rem, 5vw, 2.4rem); text-transform: uppercase; margin-bottom: 1rem; }
 .lede { font-size: 1.1rem; color: var(--ink-2); max-width: 65ch; }
 
-.agenda { display: grid; gap: 1rem; grid-template-columns: 1fr; counter-reset: ag; }
-@media (min-width: 720px) { .agenda { grid-template-columns: repeat(2, 1fr); } }
-@media (min-width: 1000px) { .agenda { grid-template-columns: repeat(5, 1fr); } }
-.agenda-step { position: relative; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 1rem 1rem 1rem; border-top: 4px solid var(--accent); }
-.agenda-step h3 { text-transform: uppercase; margin-bottom: .1rem; }
-.agenda-step .note { display: block; font-size: .8rem; color: var(--ink-3); font-weight: 600; margin-bottom: .5rem; min-height: 1.2em; }
-.agenda-step ul { margin: 0; padding-left: 1.1rem; color: var(--ink-2); font-size: .95rem; }
-.agenda-step li ul { padding-left: 1rem; font-size: .9rem; }
 
 .cats { display: grid; gap: .75rem; grid-template-columns: 1fr; }
 @media (min-width: 640px) { .cats { grid-template-columns: repeat(2, 1fr); } }
 @media (min-width: 960px) { .cats { grid-template-columns: repeat(3, 1fr); } }
-.cat-card { display: grid; grid-template-columns: auto 1fr; gap: .25rem .85rem; align-items: start; background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius); padding: 1rem; }
+.cat-card { display: grid; grid-template-columns: auto 1fr; gap: .25rem .85rem; align-items: start; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 1rem; }
 .cat-card .cat-num { width: 2.4rem; height: 2.4rem; font-size: 1.4rem; grid-row: span 2; }
 .cat-card h3 { margin: 0; }
 .cat-card p { margin: 0; color: var(--ink-3); font-size: .92rem; }

@@ -2,14 +2,6 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '../lib/auth'
 import { CATEGORIES } from '../lib/constants'
 
-const AGENDA = [
-  { title: 'Stretching', note: 'Static & dynamic', items: ['Trunk Rotation', 'Cobra', 'Lunges', 'Cross-Over', 'Ground Rotation', 'A-Skip', 'B-Skip', 'Power Lunges', 'Shuffle', 'High Knees'] },
-  { title: 'Warm-Up', note: '', items: ['Agility Ladder', ['High Knee Singles', 'High Knee Doubles', 'Raised', 'Taps'], 'Jump Rope'] },
-  { title: 'Exercises', note: '45 min', items: ['Dot Drill 1–5', 'Box Drill (double)', 'Nebraska', 'Pro Shuttle', 'Hawk Star', 'X-Drill', 'W Drill', '3 Cone', 'Cloverleaf', 'Triangle Cut/Spin'] },
-  { title: 'Step Work', note: '30 min', items: ['Hawk Box', 'Plyo Box', 'Gauntlet'] },
-  { title: 'Competition', note: 'Finish', items: ['Put the work to the test — head-to-head, timed, and scored.'] },
-] as const
-
 const CONDUCT: { title: string; points: string[] }[] = [
   { title: 'Respect for Others', points: [
     'Treat all participants, coaches, staff, and parents with respect and courtesy, regardless of race, gender, ability, or background.',
@@ -68,8 +60,7 @@ export default function Cover() {
               high-quality training, discipline, respect, and sportsmanship.
             </p>
             <div className="row">
-              <a href="#agenda" className="btn btn-primary" onClick={(e) => { e.preventDefault(); document.getElementById('agenda')?.scrollIntoView({ behavior: 'smooth' }) }}>See a session</a>
-              <Link to={portal} className="btn btn-outline">Coach portal</Link>
+              <Link to={portal} className="btn btn-primary">Coach portal</Link>
             </div>
           </div>
         </div>
@@ -92,27 +83,8 @@ export default function Cover() {
         </div>
       </section>
 
-      <section className="section" id="agenda">
-        <div className="container">
-          <div className="eyebrow">Session agenda</div>
-          <h2>Every session, start to finish</h2>
-          <div className="agenda">
-            {AGENDA.map((a, i) => (
-              <div className="agenda-step" key={a.title}>
-                <h3>{i + 1}. {a.title}</h3>
-                <span className="note">{a.note || '\u00a0'}</span>
-                <ul>
-                  {a.items.map((it, j) => typeof it === 'string'
-                    ? <li key={j}>{it}</li>
-                    : <li key={j} style={{ listStyle: 'none' }}><ul>{it.map((s) => <li key={s}>{s}</li>)}</ul></li>)}
-                </ul>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
 
-      <section className="section section-alt" id="development">
+      <section className="section" id="development">
         <div className="container">
           <div className="eyebrow">Development categories</div>
           <h2>Seven measurable areas</h2>
@@ -132,7 +104,7 @@ export default function Cover() {
         </div>
       </section>
 
-      <section className="section" id="conduct">
+      <section className="section section-alt" id="conduct">
         <div className="container">
           <div className="eyebrow">Code of conduct</div>
           <h2>How we compete</h2>
