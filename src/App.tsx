@@ -18,6 +18,7 @@ import SessionSetup from './pages/SessionSetup'
 import SessionScore from './pages/SessionScore'
 import Coaches from './pages/Coaches'
 import Reports from './pages/Reports'
+import { AllGrowthReports, AthleteGrowthReport } from './pages/GrowthReports'
 
 function RequireStaff({ admin = false }: { admin?: boolean }) {
   const { session, loading, isStaff, isAdmin } = useAuth()
@@ -52,6 +53,8 @@ export default function App() {
         <Route path="sessions/:id" element={<SessionScore />} />
         <Route path="sessions/:id/setup" element={<SessionSetup />} />
         <Route path="reports" element={<Reports />} />
+        <Route path="reports/athletes" element={<AllGrowthReports />} />
+        <Route path="athletes/:id/report" element={<AthleteGrowthReport />} />
       </Route>
       <Route path="/app/coaches" element={<RequireStaff admin />}>
         <Route index element={<Coaches />} />

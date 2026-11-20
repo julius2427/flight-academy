@@ -131,7 +131,10 @@ export default function Reports() {
     <>
       <PageHead title="Program report"
         sub={r.range ? `${fmtDate(r.range[0])} – ${fmtDate(r.range[1])}${group ? ` · ${group}` : ''}` : 'Development summary'}
-        actions={<button className="btn" onClick={() => window.print()}>Print</button>} />
+        actions={<>
+          <Link to="/app/reports/athletes" className="btn btn-primary">Individual reports</Link>
+          <button className="btn" onClick={() => window.print()}>Print</button>
+        </>} />
       <ErrorNote error={error} />
 
       <div className="row" style={{ marginBottom: '1rem' }}>

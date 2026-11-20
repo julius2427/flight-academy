@@ -71,6 +71,7 @@ export default function AthleteDetail() {
         sub={[age != null && `Age ${age}`, a.grade && `Grade ${a.grade}`, a.school, a.sport, a.position, a.team_group].filter(Boolean).join(' · ')}
         actions={<>
           {rows.length > 0 && <button className="btn" onClick={exportCsv}><IconDownload /> CSV</button>}
+          <Link to={`/app/athletes/${a.id}/report`} className="btn btn-primary">Growth report</Link>
           <Link to={`/app/athletes/${a.id}/edit`} className="btn">Edit</Link>
         </>}
       />
