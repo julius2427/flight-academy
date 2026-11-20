@@ -24,6 +24,8 @@ export const UNITS: { value: Unit; label: string; short: string }[] = [
 ]
 
 export const unitShort = (u: string) => UNITS.find((x) => x.value === u)?.short ?? u
+export const unitLabel = (u: string) => UNITS.find((x) => x.value === u)?.label ?? u
+export const scoringText = (u: string, b: Better) => `${unitLabel(u)} · ${b === 'lower' ? '↓ lower' : '↑ higher'} is better`
 
 /** Timed drills: lower is better. Everything else: higher is better. */
 export const defaultBetter = (u: Unit): Better => (u === 'seconds' ? 'lower' : 'higher')

@@ -133,5 +133,9 @@ begin
     end loop;
   end loop;
 
+  -- Scoring settings on the library items the sample uses
+  update public.exercises e set score_unit = s.unit, better = s.better from _spec s where e.title = s.title and s.item_type = 'exercise';
+  update public.drills d set score_unit = s.unit, better = s.better from _spec s where d.title = s.title and s.item_type = 'drill' and d.setup like '[sample]%';
+
   raise notice 'Sample data loaded: 12 athletes, 9 sessions.';
 end $$;

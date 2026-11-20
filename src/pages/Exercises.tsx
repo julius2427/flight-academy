@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import type { Exercise } from '../lib/types'
-import { CATEGORIES, categoryName, fmtNum } from '../lib/constants'
+import { CATEGORIES, categoryName, fmtNum, scoringText } from '../lib/constants'
 import { IconPlus } from '../components/Icons'
 import { ErrorNote, PageHead, Spinner } from '../components/Ui'
 
@@ -42,9 +42,7 @@ export default function Exercises() {
                 <strong>{e.title}</strong>
                 <span className="tag">{e.category_id ? `${e.category_id}. ` : ''}{categoryName(e.category_id)}</span>
               </div>
-              {(measureSummary(e) || e.steps.length > 0) && (
-                <div className="muted small">{[measureSummary(e), e.steps.length && `${e.steps.length} steps`].filter(Boolean).join(' · ')}</div>
-              )}
+              <div className="muted small">{[e.score_unit && scoringText(e.score_unit, e.better), measureSummary(e), e.steps.length && `${e.steps.length} steps`].filter(Boolean).join(' · ')}</div>
             </Link>
           ))}
         </div>

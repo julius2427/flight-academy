@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/auth'
 import type { Athlete, Better, ItemType, Section, SessionItem, Unit } from '../lib/types'
-import { UNITS, defaultBetter, todayISO } from '../lib/constants'
+import { fmtDate, scoringText, todayISO } from '../lib/constants'
 import { ErrorNote, Field, PageHead, Spinner } from '../components/Ui'
 
 interface Slot { id?: string; item_type: ItemType; ref: string; unit: Unit; better: Better }
@@ -24,7 +24,9 @@ export default function SessionSetup() {
   })
   const [athletes, setAthletes] = useState<Athlete[] | null>(null)
   const [picked, setPicked] = useState<Set<string>>(new Set())
-  const [lib, setLib] = useState<{ exercise: { id: string; title: string }[]; drill: { id: string; title: string }[] }>({ exercise: [], drill: [] })
+  type LibItem = { id: string; title: string; score_unit: Unit; better: Better }
+  const [lib, setLib] = useState<{ exercise: LibItem[]; drill: LibItem[] } | null>(null)
+  const [prefilledFrom, setPrefilledFrom] = useState<string | null>(null)
   const [q, setQ] = useState('')
   const [group, setGroup] = useState('')
   const [busy, setBusy] = useState(false)
@@ -34,10 +36,28 @@ export default function SessionSetup() {
   useEffect(() => {
     supabase.from('athletes').select('*').eq('active', true).order('last_name').order('first_name').then(({ data }) => setAthletes((data as Athlete[]) ?? []))
     Promise.all([
-      supabase.from('exercises').select('id, title').order('title'),
-      supabase.from('drills').select('id, title').order('title'),
-    ]).then(([e, d]) => setLib({ exercise: e.data ?? [], drill: d.data ?? [] }))
-  }, [])
+      supabase.from('exercises').select('id, title, score_unit, better').order('title'),
+      supabase.from('drills').select('id, title, score_unit, better').order('title'),
+    ]).then(async ([e, d]) => {
+      const l = { exercise: (e.data ?? []) as LibItem[], drill: (d.data ?? []) as LibItem[] }
+      setLib(l)
+      if (id) return
+      // New session: start from the most recent session's columns.
+      const { data: last } = await supabase.from('sessions').select('id, session_date').order('session_date', { ascending: false }).order('created_at', { ascending: false }).limit(1).maybeSingle()
+      if (!last) return
+      const { data: its } = await supabase.from('session_items').select('*').eq('session_id', last.id)
+      if (!its?.length) return
+      const next = { conditioning: Array.from({ length: 6 }, emptySlot), measure: Array.from({ length: 3 }, emptySlot) }
+      for (const it of its as SessionItem[]) {
+        const ref = it.exercise_id ?? it.drill_id
+        const item = ref ? l[it.item_type].find((x) => x.id === ref) : undefined
+        if (!item) continue // removed from the library since
+        next[it.section][it.slot - 1] = { item_type: it.item_type, ref: item.id, unit: item.score_unit, better: item.better }
+      }
+      setSlots(next)
+      setPrefilledFrom(last.session_date)
+    })
+  }, [id])
 
   useEffect(() => {
     if (!id) return
@@ -68,7 +88,7 @@ export default function SessionSetup() {
   const groups = useMemo(() => [...new Set((athletes ?? []).map((a) => a.team_group).filter(Boolean))].sort() as string[], [athletes])
   const visible = (athletes ?? []).filter((a) => (!group || a.team_group === group) && `${a.first_name} ${a.last_name}`.toLowerCase().includes(q.toLowerCase()))
 
-  if (!loaded || !athletes) return error ? <ErrorNote error={error} /> : <Spinner />
+  if (!loaded || !athletes || !lib) return error ? <ErrorNote error={error} /> : <Spinner />
 
   const setSlot = (sec: Section, i: number, patch: Partial<Slot>) =>
     setSlots({ ...slots, [sec]: slots[sec].map((s, j) => (j === i ? { ...s, ...patch } : s)) })
@@ -91,7 +111,7 @@ export default function SessionSetup() {
       const { data: existing } = await supabase.from('session_items').select('id, section, slot').eq('session_id', sid)
       const keep = new Set<string>()
       for (const u of used) {
-        const title = u.ref.startsWith('label:') ? u.ref.slice(6) : lib[u.item_type].find((x) => x.id === u.ref)?.title ?? 'Untitled'
+        const title = u.ref.startsWith('label:') ? u.ref.slice(6) : lib![u.item_type].find((x) => x.id === u.ref)?.title ?? 'Untitled'
         const realId = u.ref.startsWith('label:') ? null : u.ref
         const row = {
           session_id: sid, section: u.section, slot: u.slot, item_type: u.item_type,
@@ -147,6 +167,13 @@ export default function SessionSetup() {
           </div>
         </div>
 
+        {prefilledFrom && (
+          <div className="alert spread">
+            <span className="small">Drills copied from your last session ({fmtDate(prefilledFrom)}). Change any that are different today.</span>
+            <button type="button" className="btn btn-sm" onClick={() => { setSlots({ conditioning: Array.from({ length: 6 }, emptySlot), measure: Array.from({ length: 3 }, emptySlot) }); setPrefilledFrom(null) }}>Clear all</button>
+          </div>
+        )}
+
         {SECTIONS.map((sec) => (
           <div className="card stack" key={sec.key}>
             <div>
@@ -161,20 +188,16 @@ export default function SessionSetup() {
                   <option value="exercise">Exercise</option>
                   <option value="drill">Drill</option>
                 </select>
-                <select className="select" value={s.ref} aria-label={`${sec.title} ${i + 1}`} onChange={(e) => setSlot(sec.key, i, { ref: e.target.value })}>
+                <select className="select" value={s.ref} aria-label={`${sec.title} ${i + 1}`}
+                  onChange={(e) => {
+                    const item = lib[s.item_type].find((x) => x.id === e.target.value)
+                    setSlot(sec.key, i, item ? { ref: item.id, unit: item.score_unit, better: item.better } : { ref: e.target.value })
+                  }}>
                   <option value="">— none —</option>
                   {s.ref.startsWith('label:') && <option value={s.ref}>{s.ref.slice(6)} (removed from library)</option>}
                   {lib[s.item_type].map((x) => <option key={x.id} value={x.id}>{x.title}</option>)}
                 </select>
-                <select className="select" value={s.unit} aria-label={`${sec.title} ${i + 1} unit`}
-                  onChange={(e) => { const u = e.target.value as Unit; setSlot(sec.key, i, { unit: u, better: defaultBetter(u) }) }}>
-                  {UNITS.map((u) => <option key={u.value} value={u.value}>{u.label}</option>)}
-                </select>
-                <select className="select" value={s.better} aria-label={`${sec.title} ${i + 1} which is better`}
-                  onChange={(e) => setSlot(sec.key, i, { better: e.target.value as Better })}>
-                  <option value="lower">Lower is better</option>
-                  <option value="higher">Higher is better</option>
-                </select>
+                <span className="slot-score">{s.ref ? scoringText(s.unit, s.better) : ''}</span>
               </div>
             ))}
           </div>

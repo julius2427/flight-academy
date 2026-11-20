@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import type { Drill } from '../lib/types'
-import { CATEGORIES, categoryName } from '../lib/constants'
+import { CATEGORIES, categoryName, scoringText } from '../lib/constants'
 import { IconPlus } from '../components/Icons'
 import { ErrorNote, PageHead, Spinner } from '../components/Ui'
 
@@ -41,7 +41,7 @@ export default function Drills() {
                   <strong>{d.title}</strong>
                   <span className="row" style={{ gap: '.3rem' }}>{cats.map((c) => <span key={c.rank} className={`tag ${c.rank > 1 ? 'tag-gray' : ''}`}>{categoryName(c.category_id)}</span>)}</span>
                 </div>
-                <div className="muted small">{d.drill_exercises?.length ?? 0} exercises · {d.steps.length} steps</div>
+                <div className="muted small">{[d.score_unit && scoringText(d.score_unit, d.better), `${d.drill_exercises?.length ?? 0} exercises`, `${d.steps.length} steps`].filter(Boolean).join(' · ')}</div>
               </Link>
             )
           })}

@@ -1,15 +1,16 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
-import type { Drill, Exercise } from '../lib/types'
+import type { Better, Drill, Exercise, Unit } from '../lib/types'
 import { todayISO } from '../lib/constants'
 import { ErrorNote, Field, PageHead, Spinner } from '../components/Ui'
 import { SetupUpload } from '../components/SetupImage'
 import StepsEditor, { cleanSteps } from '../components/StepsEditor'
 import CategorySelect from '../components/CategoryPicker'
+import ScoringEditor from '../components/ScoringEditor'
 
-interface Form { title: string; created_on: string; setup: string | null; setup_image: string | null; steps: string[]; exercises: string[]; cats: (number | null)[] }
-const blank = (): Form => ({ title: '', created_on: todayISO(), setup: null, setup_image: null, steps: [], exercises: ['', '', '', '', '', ''], cats: [null, null, null] })
+interface Form { title: string; created_on: string; setup: string | null; setup_image: string | null; steps: string[]; exercises: string[]; cats: (number | null)[]; score_unit: Unit; better: Better }
+const blank = (): Form => ({ title: '', created_on: todayISO(), setup: null, setup_image: null, steps: [], exercises: ['', '', '', '', '', ''], cats: [null, null, null], score_unit: 'seconds', better: 'lower' })
 
 export default function DrillForm() {
   const { id } = useParams()
@@ -33,7 +34,7 @@ export default function DrillForm() {
         d.drill_exercises.forEach((x) => { ex[x.position - 1] = x.exercises?.title ?? x.label ?? '' })
         const cats: (number | null)[] = [null, null, null]
         d.drill_categories?.forEach((c) => { cats[c.rank - 1] = c.category_id })
-        setF({ title: d.title, created_on: d.created_on, setup: d.setup, setup_image: d.setup_image, steps: d.steps, exercises: ex, cats })
+        setF({ title: d.title, created_on: d.created_on, setup: d.setup, setup_image: d.setup_image, steps: d.steps, exercises: ex, cats, score_unit: d.score_unit ?? 'seconds', better: d.better ?? 'lower' })
       })
   }, [id])
 
@@ -44,7 +45,7 @@ export default function DrillForm() {
     e.preventDefault()
     setBusy(true); setError(null)
     try {
-      const base = { title: f!.title.trim(), created_on: f!.created_on, setup: f!.setup, setup_image: f!.setup_image, steps: cleanSteps(f!.steps) }
+      const base = { title: f!.title.trim(), created_on: f!.created_on, setup: f!.setup, setup_image: f!.setup_image, steps: cleanSteps(f!.steps), score_unit: f!.score_unit, better: f!.better }
       const res = id
         ? await supabase.from('drills').update(base).eq('id', id).select('id').single()
         : await supabase.from('drills').insert(base).select('id').single()
@@ -120,6 +121,7 @@ export default function DrillForm() {
             </Field>
           ))}
         </div>
+        <ScoringEditor unit={f.score_unit} better={f.better} onChange={(u, b) => setF({ ...f, score_unit: u, better: b })} />
         <ErrorNote error={error} />
         <div className="spread">
           {id ? <button type="button" className="btn btn-danger" onClick={remove}>Delete</button> : <span />}

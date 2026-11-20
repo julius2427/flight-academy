@@ -7,11 +7,13 @@ import { ErrorNote, Field, PageHead, Spinner } from '../components/Ui'
 import { SetupUpload } from '../components/SetupImage'
 import StepsEditor, { cleanSteps } from '../components/StepsEditor'
 import CategorySelect from '../components/CategoryPicker'
+import ScoringEditor from '../components/ScoringEditor'
 
 type Form = Omit<Exercise, 'id'>
 const blank = (): Form => ({
   title: '', created_on: todayISO(), setup: null, setup_image: null, steps: [], category_id: null,
   distance_value: null, distance_unit: 'meters', time_value: null, time_unit: 'seconds', reps_value: null, reps_unit: 'reps',
+  score_unit: 'seconds', better: 'lower',
 })
 
 export default function ExerciseForm() {
@@ -80,7 +82,7 @@ export default function ExerciseForm() {
           <StepsEditor steps={f.steps} onChange={(s) => set('steps', s)} placeholder="e.g. Start in athletic stance at cone 1" />
         </div>
         <div className="card stack">
-          <h3>Measure <span className="muted small" style={{ fontFamily: 'var(--body)', fontWeight: 400 }}>complete all that apply</span></h3>
+          <h3>Prescription <span className="muted small" style={{ fontFamily: 'var(--body)', fontWeight: 400 }}>distance / time / reps per set; complete all that apply</span></h3>
           <div className="measure-grid">
             <span className="lbl">Distance</span>
             <input className="input" {...num('distance_value')} aria-label="Distance" />
@@ -97,6 +99,7 @@ export default function ExerciseForm() {
             <input className="input" value={f.reps_unit ?? ''} onChange={(e) => set('reps_unit', e.target.value)} aria-label="Rep unit" placeholder="reps" />
           </div>
         </div>
+        <ScoringEditor unit={f.score_unit} better={f.better} onChange={(u, b) => setF({ ...f, score_unit: u, better: b })} />
         <ErrorNote error={error} />
         <div className="spread">
           {id ? <button type="button" className="btn btn-danger" onClick={remove}>Delete</button> : <span />}

@@ -41,6 +41,8 @@ export interface Exercise {
   time_unit: string | null
   reps_value: number | null
   reps_unit: string | null
+  score_unit: Unit
+  better: Better
 }
 
 export interface Drill {
@@ -50,6 +52,8 @@ export interface Drill {
   setup: string | null
   setup_image: string | null
   steps: string[]
+  score_unit: Unit
+  better: Better
   drill_exercises?: { position: number; exercise_id: string | null; label: string | null }[]
   drill_categories?: { rank: number; category_id: number }[]
 }
