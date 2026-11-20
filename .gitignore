@@ -1,0 +1,7 @@
+node_modules
+dist
+.env
+.env.local
+.DS_Store
+# Source program PDF stays local (contains a reprinted third-party article)
+*.pdf
