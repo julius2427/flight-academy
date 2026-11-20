@@ -360,3 +360,18 @@ from (values
   ('Agility Ladder', 2), ('Jump Rope', 4)
 ) as t(title, cat)
 where not exists (select 1 from public.exercises e where e.title = t.title);
+
+-- ---------- API grants -------------------------------------------------
+-- Newer Supabase projects don't auto-expose tables to the Data API.
+-- Grant access ONLY to signed-in users; RLS above still decides which rows
+-- they see. The anonymous (logged-out) role gets nothing.
+revoke all on all tables in schema public from anon;
+grant usage on schema public to authenticated;
+grant select, insert, update, delete on
+  public.profiles, public.athletes, public.athlete_access, public.exercises,
+  public.drills, public.drill_exercises, public.drill_categories, public.sessions,
+  public.session_athletes, public.session_items, public.results
+  to authenticated;
+grant select on public.categories, public.athlete_results to authenticated;
+grant execute on function public.is_staff(), public.is_admin(), public.can_view_athlete(uuid) to authenticated;
+revoke execute on function public.handle_new_user() from public, anon, authenticated;
