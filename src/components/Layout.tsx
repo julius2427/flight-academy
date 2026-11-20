@@ -1,11 +1,12 @@
 import { NavLink, Outlet } from 'react-router-dom'
 import { useAuth } from '../lib/auth'
-import { IconClipboard, IconCone, IconHome, IconLayers, IconUsers } from './Icons'
+import { IconChart, IconClipboard, IconCone, IconHome, IconLayers, IconUsers } from './Icons'
 
 const links = [
   { to: '/app', label: 'Home', icon: <IconHome />, end: true },
   { to: '/app/sessions', label: 'Sessions', icon: <IconClipboard /> },
   { to: '/app/athletes', label: 'Athletes', icon: <IconUsers /> },
+  { to: '/app/reports', label: 'Reports', icon: <IconChart /> },
   { to: '/app/exercises', label: 'Exercises', icon: <IconCone /> },
   { to: '/app/drills', label: 'Drills', icon: <IconLayers /> },
 ]

@@ -114,7 +114,7 @@ export default function AthleteDetail() {
           </div>
           <div className="table-wrap">
             <table>
-              <thead><tr><th>Drill / exercise</th><th className="num">Latest</th><th className="num">Best</th><th className="num">Change</th></tr></thead>
+              <thead><tr><th>Drill / exercise</th><th className="num">Latest</th><th className="num">Best</th><th className="num" title="Change since first result. ▲ green = improved">Change</th></tr></thead>
               <tbody>
                 {shown.map((x) => {
                   const diff = x.latest - x.first
@@ -126,14 +126,14 @@ export default function AthleteDetail() {
                       <tr className="measure-row" onClick={() => setOpen(isOpen ? null : x.key)} aria-expanded={isOpen}>
                         <td>
                           <strong>{x.label}</strong>
-                          <div className="muted small">{categoryName(x.category_id)} · {x.better === 'lower' ? 'lower' : 'higher'} is better · {x.points.length} result{x.points.length > 1 ? 's' : ''}</div>
+                          <div className="muted small">{categoryName(x.category_id)} · {x.better === 'lower' ? '↓' : '↑'} better · {x.points.length}×</div>
                         </td>
                         <td className="num">{fmtNum(x.latest)} {unitShort(x.unit)}</td>
                         <td className="num"><span className="tag tag-good"><IconTrophy />{fmtNum(x.best)}</span></td>
                         <td className="num">
                           {x.points.length < 2 ? <span className="muted">—</span> :
                             <span className={`tag ${improved ? 'tag-good' : worse ? 'tag-bad' : 'tag-gray'}`}>
-                              {improved ? '▲' : worse ? '▼' : '='} {diff > 0 ? '+' : ''}{fmtNum(diff)}
+                              {improved ? '▲' : worse ? '▼' : '='} {fmtNum(Math.abs(+diff.toFixed(2)))}
                             </span>}
                         </td>
                       </tr>
@@ -151,7 +151,7 @@ export default function AthleteDetail() {
               </tbody>
             </table>
           </div>
-          <p className="muted small" style={{ marginTop: '.5rem' }}>Tap a row to see the trend.</p>
+          <p className="muted small" style={{ marginTop: '.5rem' }}>Tap a row to see the trend. ▲ green = improved since first result; ↓/↑ shows whether lower or higher is better.</p>
         </>}
       </div>
 

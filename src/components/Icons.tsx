@@ -8,3 +8,4 @@ export const IconBack = () => <svg {...P} width="16" height="16"><path d="M15 18
 export const IconPlus = () => <svg {...P} width="18" height="18"><path d="M12 5v14M5 12h14" /></svg>
 export const IconDownload = () => <svg {...P} width="18" height="18"><path d="M12 4v11M7 10l5 5 5-5M5 20h14" /></svg>
 export const IconTrophy = () => <svg {...P} width="14" height="14"><path d="M8 4h8v5a4 4 0 0 1-8 0zM8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4M12 13v4M8 20h8" /></svg>
+export const IconChart = () => <svg {...P}><path d="M4 20V10M10 20V4M16 20v-7M22 20H2" /></svg>

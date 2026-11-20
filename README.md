@@ -54,6 +54,16 @@ The **first account created becomes the admin.** Every account after that starts
 
 ---
 
+## Sample / demo data
+To show how the tracking works before you have real data:
+```bash
+cat ~/Documents/FlightAcademy/supabase/sample-data.sql | pbcopy          # paste in Supabase SQL Editor → Run
+```
+This adds 12 made-up athletes (12U and 14U), 9 weekly sessions, and about 670 results. Every sample record is tagged `[sample]`. To remove all of it and keep your real data:
+```bash
+cat ~/Documents/FlightAcademy/supabase/sample-data-remove.sql | pbcopy   # paste in Supabase SQL Editor → Run
+```
+
 ## Moving to a custom domain later
 The build uses relative paths and hash-based routes (`/#/app/...`), so the same build works on any domain.
 1. Add a file `public/CNAME` containing just the domain (e.g. `flightacademy.org`), then commit and push.

@@ -75,6 +75,7 @@ export default function Dashboard() {
         <div className="card">
           <h2>Quick actions</h2>
           <div className="list">
+            <Link to="/app/reports" className="btn btn-block btn-primary">View program report</Link>
             <Link to="/app/sessions/new" className="btn btn-block">Score a session</Link>
             <Link to="/app/athletes/new" className="btn btn-block">Add an athlete</Link>
             <Link to="/app/exercises/new" className="btn btn-block">Create an exercise</Link>
