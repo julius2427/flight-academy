@@ -201,12 +201,15 @@ tr:last-child td { border-bottom: 0; }
 @media (min-width: 960px) { .savebar { bottom: 16px; } }
 
 /* Slot editor (session setup) */
-.slot { display: grid; gap: .45rem; grid-template-columns: 24px minmax(0, 1fr); align-items: center; padding: .6rem; border: 1px solid var(--line); border-radius: 10px; background: var(--surface-2); }
-@media (min-width: 720px) { .slot { grid-template-columns: 24px minmax(0, 1fr) 210px; align-items: center; } }
+.slot { display: grid; gap: .45rem; grid-template-columns: 24px minmax(0, 1fr) 32px; align-items: center; padding: .6rem; border: 1px solid var(--line); border-radius: 10px; background: var(--surface-2); }
+@media (min-width: 720px) { .slot { grid-template-columns: 24px minmax(0, 1fr) 210px 32px; align-items: center; } .slot .slot-remove { order: 4; } }
+.slot-remove { width: 32px; height: 32px; border-radius: 8px; border: 1px solid transparent; background: transparent; color: var(--ink-3); cursor: pointer; font-size: .9rem; }
+.slot-remove:hover { color: var(--bad); border-color: var(--line-strong); }
+.tag-warn { background: var(--warn-soft); color: var(--ink); }
 .select.is-empty { color: var(--ink-3); }
 .select option, .select optgroup { color: var(--ink); background: var(--surface); }
 .slot-score { font-size: .82rem; color: var(--ink-3); font-weight: 600; }
-.slot-score { grid-column: 2; }
+.slot-score { grid-column: 2 / 4; }
 @media (min-width: 720px) { .slot-score { grid-column: auto; } }
 .slot-score:empty { display: none; }
 @media (min-width: 720px) { .slot-score:empty { display: block; } }

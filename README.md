@@ -17,7 +17,7 @@ The app follows the paper forms in the program binder:
 |---|---|---|
 | **New Exercise** sheet | Exercises → New exercise | Title, date, setup notes + photo/diagram, up to 6 steps, distance / time / # per rep, **one** category |
 | **New Drill** sheet | Drills → New drill | Title, date, setup, up to 6 exercises in order (picked from the library), up to 6 steps, **up to 3** categories ranked by intent |
-| **Score sheet** (Coach / Date / 24 athletes × 6 Conditioning + 3 Measure) | Sessions → New session → enter scores | Each column = a drill or exercise + unit (reps, seconds, meters, yards, inches, lbs) + whether higher or lower is better. Each cell is one result. |
+| **Score sheet** (Coach / Date / athletes × Conditioning + Measure columns) | Sessions → New session → enter scores | Each column = a drill or exercise. Its scoring (unit + whether lower or higher is better) comes from the exercise/drill. 6 conditioning + 3 measure columns is recommended, not enforced. Each cell is one result. |
 
 **Scoring on a phone:** "One at a time" mode shows one drill with every athlete listed underneath, so a coach at a station types a number and taps Enter to jump to the next athlete. "Full sheet" mode shows the whole grid, like the paper form, and works best on a tablet or laptop.
 
@@ -53,6 +53,13 @@ npm run dev                 # http://localhost:5173
 The **first account created becomes the admin.** Every account after that starts as *Pending* and sees no athlete data until an admin approves it under **Coaches**.
 
 ---
+
+## Database updates
+Fresh projects only need `supabase/schema.sql`. Projects created earlier should run each file in `supabase/migrations/` once, in order. They're safe to re-run.
+```bash
+cat ~/Documents/FlightAcademy/supabase/migrations/002-scoring-on-exercises.sql | pbcopy
+cat ~/Documents/FlightAcademy/supabase/migrations/003-flexible-session-columns.sql | pbcopy
+```
 
 ## Sample / demo data
 To show how the tracking works before you have real data:

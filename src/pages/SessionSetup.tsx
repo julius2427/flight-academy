@@ -6,22 +6,31 @@ import type { Athlete, Better, ItemType, Section, SessionItem, Unit } from '../l
 import { fmtDate, scoringText, todayISO } from '../lib/constants'
 import { ErrorNote, Field, PageHead, Spinner } from '../components/Ui'
 
-interface Slot { id?: string; item_type: ItemType; ref: string; unit: Unit; better: Better }
-const emptySlot = (): Slot => ({ item_type: 'exercise', ref: '', unit: 'seconds', better: 'lower' })
-const SECTIONS: { key: Section; title: string; n: number; hint: string }[] = [
-  { key: 'conditioning', title: 'Conditioning', n: 6, hint: 'Up to 6 drills/exercises worked during the session' },
-  { key: 'measure', title: 'Measure', n: 3, hint: 'Up to 3 tested results for development tracking' },
+/** One column of the score sheet. `k` is a stable React key; `id` is set once saved. */
+interface Slot { k: string; id?: string; item_type: ItemType; ref: string; unit: Unit; better: Better }
+const emptySlot = (): Slot => ({ k: crypto.randomUUID(), item_type: 'exercise', ref: '', unit: 'seconds', better: 'lower' })
+const emptySlots = (): Record<Section, Slot[]> => ({ conditioning: [emptySlot()], measure: [emptySlot()] })
+// Recommendations come from the paper score sheet (6 conditioning + 3 measure columns). Not enforced.
+const SECTIONS: { key: Section; title: string; rec: number; hint: string; add: string }[] = [
+  { key: 'conditioning', title: 'Conditioning', rec: 6, hint: 'Drills/exercises worked during the session', add: 'Add conditioning drill' },
+  { key: 'measure', title: 'Measure', rec: 3, hint: 'Tested results used for development tracking', add: 'Add measure' },
 ]
+
+/** Turn saved session columns into editable rows, ordered by slot. */
+function rowsFromItems(items: SessionItem[], map: (it: SessionItem) => Slot | null): Record<Section, Slot[]> {
+  const out: Record<Section, Slot[]> = { conditioning: [], measure: [] }
+  for (const it of [...items].sort((a, b) => a.slot - b.slot)) { const r = map(it); if (r) out[it.section].push(r) }
+  if (!out.conditioning.length) out.conditioning.push(emptySlot())
+  if (!out.measure.length) out.measure.push(emptySlot())
+  return out
+}
 
 export default function SessionSetup() {
   const { id } = useParams()
   const { profile } = useAuth()
   const navigate = useNavigate()
   const [meta, setMeta] = useState({ session_date: todayISO(), coach_name: profile?.full_name ?? '', location: '', notes: '' })
-  const [slots, setSlots] = useState<Record<Section, Slot[]>>({
-    conditioning: Array.from({ length: 6 }, emptySlot),
-    measure: Array.from({ length: 3 }, emptySlot),
-  })
+  const [slots, setSlots] = useState<Record<Section, Slot[]>>(emptySlots)
   const [athletes, setAthletes] = useState<Athlete[] | null>(null)
   const [picked, setPicked] = useState<Set<string>>(new Set())
   type LibItem = { id: string; title: string; score_unit: Unit; better: Better }
@@ -52,15 +61,14 @@ export default function SessionSetup() {
       if (!last) return
       const { data: its } = await supabase.from('session_items').select('*').eq('session_id', last.id)
       if (!its?.length) return
-      const next = { conditioning: Array.from({ length: 6 }, emptySlot), measure: Array.from({ length: 3 }, emptySlot) }
       let copied = 0
-      for (const it of its as SessionItem[]) {
+      const next = rowsFromItems(its as SessionItem[], (it) => {
         const ref = it.exercise_id ?? it.drill_id
         const item = ref ? l[it.item_type].find((x) => x.id === ref) : undefined
-        if (!item) continue // removed from the library since
-        next[it.section][it.slot - 1] = { item_type: it.item_type, ref: item.id, unit: item.score_unit, better: item.better }
+        if (!item) return null // removed from the library since
         copied++
-      }
+        return { k: crypto.randomUUID(), item_type: it.item_type, ref: item.id, unit: item.score_unit, better: item.better }
+      })
       if (!copied) return
       setSlots(next)
       setPrefilledFrom(last.session_date)
@@ -76,11 +84,8 @@ export default function SessionSetup() {
     ]).then(([s, items, att]) => {
       if (s.error) return setError(s.error.message)
       setMeta({ session_date: s.data.session_date, coach_name: s.data.coach_name ?? '', location: s.data.location ?? '', notes: s.data.notes ?? '' })
-      const next = { conditioning: Array.from({ length: 6 }, emptySlot), measure: Array.from({ length: 3 }, emptySlot) }
-      for (const it of (items.data ?? []) as SessionItem[]) {
-        next[it.section][it.slot - 1] = { id: it.id, item_type: it.item_type, ref: (it.exercise_id ?? it.drill_id ?? '') || `label:${it.label}`, unit: it.unit, better: it.better }
-      }
-      setSlots(next)
+      setSlots(rowsFromItems((items.data ?? []) as SessionItem[], (it) => (
+        { k: it.id, id: it.id, item_type: it.item_type, ref: (it.exercise_id ?? it.drill_id ?? '') || `label:${it.label}`, unit: it.unit, better: it.better })))
       setPicked(new Set((att.data ?? []).map((r) => r.athlete_id)))
       setLoaded(true)
     })
@@ -100,11 +105,17 @@ export default function SessionSetup() {
 
   const setSlot = (sec: Section, i: number, patch: Partial<Slot>) =>
     setSlots({ ...slots, [sec]: slots[sec].map((s, j) => (j === i ? { ...s, ...patch } : s)) })
+  const addSlot = (sec: Section) => setSlots({ ...slots, [sec]: [...slots[sec], emptySlot()] })
+  const removeSlot = (sec: Section, i: number) => {
+    const rest = slots[sec].filter((_, j) => j !== i)
+    setSlots({ ...slots, [sec]: rest.length ? rest : [emptySlot()] })
+  }
   const toggle = (aid: string) => { const n = new Set(picked); n.has(aid) ? n.delete(aid) : n.add(aid); setPicked(n) }
 
   async function save(e: FormEvent) {
     e.preventDefault()
-    const used = SECTIONS.flatMap((s) => slots[s.key].map((x, i) => ({ ...x, section: s.key, slot: i + 1 }))).filter((x) => x.ref)
+    // Filled rows only, numbered 1..n within each section.
+    const used = SECTIONS.flatMap((s) => slots[s.key].filter((x) => x.ref).map((x, i) => ({ ...x, section: s.key, slot: i + 1 })))
     if (used.length === 0) return setError('Pick at least one drill or exercise.')
     if (picked.size === 0) return setError('Select at least one athlete.')
     setBusy(true); setError(null)
@@ -115,9 +126,16 @@ export default function SessionSetup() {
       if (sres.error) throw sres.error
       const sid = sres.data.id as string
 
-      // Items: update existing, insert new, delete cleared (cascades their results).
-      const { data: existing } = await supabase.from('session_items').select('id, section, slot').eq('session_id', sid)
-      const keep = new Set<string>()
+      // Columns. Saved rows are matched by id so results stay with their drill even when rows
+      // are removed or renumbered. Removed columns are deleted (their results go with them).
+      const { data: existing } = await supabase.from('session_items').select('id').eq('session_id', sid)
+      const keep = new Set(used.map((u) => u.id).filter(Boolean) as string[])
+      const drop = (existing ?? []).filter((x) => !keep.has(x.id)).map((x) => x.id)
+      if (drop.length) { const r = await supabase.from('session_items').delete().in('id', drop); if (r.error) throw r.error }
+      // Park kept rows on temporary slot numbers so renumbering can't collide.
+      for (const u of used) if (u.id) {
+        const r = await supabase.from('session_items').update({ slot: 1000 + u.slot }).eq('id', u.id); if (r.error) throw r.error
+      }
       for (const u of used) {
         const title = u.ref.startsWith('label:') ? u.ref.slice(6) : lib![u.item_type].find((x) => x.id === u.ref)?.title ?? 'Untitled'
         const realId = u.ref.startsWith('label:') ? null : u.ref
@@ -126,15 +144,11 @@ export default function SessionSetup() {
           exercise_id: u.item_type === 'exercise' ? realId : null, drill_id: u.item_type === 'drill' ? realId : null,
           label: title, unit: u.unit, better: u.better,
         }
-        const match = (existing ?? []).find((x) => x.section === u.section && x.slot === u.slot)
-        const r = match
-          ? await supabase.from('session_items').update(row).eq('id', match.id)
+        const r = u.id
+          ? await supabase.from('session_items').update(row).eq('id', u.id)
           : await supabase.from('session_items').insert(row)
         if (r.error) throw r.error
-        if (match) keep.add(match.id)
       }
-      const drop = (existing ?? []).filter((x) => !keep.has(x.id)).map((x) => x.id)
-      if (drop.length) { const r = await supabase.from('session_items').delete().in('id', drop); if (r.error) throw r.error }
 
       // Attendance
       const { data: att } = await supabase.from('session_athletes').select('athlete_id').eq('session_id', sid)
@@ -178,18 +192,25 @@ export default function SessionSetup() {
         {prefilledFrom && (
           <div className="alert spread">
             <span className="small">Drills copied from your last session ({fmtDate(prefilledFrom)}). Change any that are different today.</span>
-            <button type="button" className="btn btn-sm" onClick={() => { setSlots({ conditioning: Array.from({ length: 6 }, emptySlot), measure: Array.from({ length: 3 }, emptySlot) }); setPrefilledFrom(null) }}>Clear all</button>
+            <button type="button" className="btn btn-sm" onClick={() => { setSlots(emptySlots()); setPrefilledFrom(null) }}>Clear all</button>
           </div>
         )}
 
-        {SECTIONS.map((sec) => (
+        {SECTIONS.map((sec) => {
+          const filled = slots[sec.key].filter((x) => x.ref).length
+          return (
           <div className="card stack" key={sec.key}>
-            <div>
-              <h3 style={{ textTransform: 'uppercase', margin: 0 }}>{sec.title}</h3>
-              <div className="muted small">{sec.hint}</div>
+            <div className="spread" style={{ alignItems: 'flex-start' }}>
+              <div>
+                <h3 style={{ textTransform: 'uppercase', margin: 0 }}>{sec.title}</h3>
+                <div className="muted small">{sec.hint}</div>
+              </div>
+              <span className={`tag ${filled > sec.rec ? 'tag-warn' : 'tag-gray'}`} title={`The score sheet has ${sec.rec} ${sec.title.toLowerCase()} columns`}>
+                {filled} of {sec.rec} recommended
+              </span>
             </div>
             {slots[sec.key].map((s, i) => (
-              <div className="slot" key={i}>
+              <div className="slot" key={s.k}>
                 <span className="slot-num">{i + 1}</span>
                 <select className={`select ${s.ref ? '' : 'is-empty'}`} value={s.ref ? `${s.item_type}:${s.ref}` : ''} aria-label={`${sec.title} ${i + 1}`}
                   onChange={(e) => {
@@ -205,11 +226,25 @@ export default function SessionSetup() {
                   {lib.exercise.length > 0 && <optgroup label="Exercises">{lib.exercise.map((x) => <option key={x.id} value={`exercise:${x.id}`}>{x.title}</option>)}</optgroup>}
                   {lib.drill.length > 0 && <optgroup label="Drills">{lib.drill.map((x) => <option key={x.id} value={`drill:${x.id}`}>{x.title}</option>)}</optgroup>}
                 </select>
+                <button type="button" className="slot-remove" aria-label={`Remove ${sec.title} ${i + 1}`} title="Remove"
+                  onClick={() => {
+                    if (s.id && !confirm('Remove this column? Any scores already entered for it in this session will be deleted when you save.')) return
+                    removeSlot(sec.key, i)
+                  }}>✕</button>
                 <span className="slot-score">{s.ref ? scoringText(s.unit, s.better) : ''}</span>
               </div>
             ))}
+            {filled > sec.rec && (
+              <div className="alert alert-warn small">
+                {filled} added: more than the recommended {sec.rec}. That’s fine; scoring will just take a little longer.
+              </div>
+            )}
+            <div>
+              <button type="button" className="btn btn-sm" onClick={() => addSlot(sec.key)}>+ {sec.add}</button>
+            </div>
           </div>
-        ))}
+          )
+        })}
 
         <div className="card stack">
           <div className="spread">

@@ -185,7 +185,7 @@ create table if not exists public.session_items (
   id               uuid primary key default gen_random_uuid(),
   session_id       uuid not null references public.sessions(id) on delete cascade,
   section          text not null check (section in ('conditioning', 'measure')),
-  slot             smallint not null check (slot between 1 and 6),
+  slot             smallint not null,   -- 1..n; 6 conditioning / 3 measure is a recommendation, not a limit
   item_type        text not null check (item_type in ('drill', 'exercise')),
   drill_id         uuid references public.drills(id) on delete set null,
   exercise_id      uuid references public.exercises(id) on delete set null,
@@ -193,7 +193,6 @@ create table if not exists public.session_items (
   unit             text not null check (unit in ('reps', 'seconds', 'meters', 'yards', 'inches', 'lbs')),
   better           text not null default 'higher' check (better in ('higher', 'lower')),
   unique (session_id, section, slot),
-  check (section = 'conditioning' or slot <= 3),
   check ((item_type = 'drill' and exercise_id is null) or (item_type = 'exercise' and drill_id is null))
 );
 
@@ -428,3 +427,17 @@ do $$ begin
   alter table public.drills    add constraint drills_score_unit_chk check (score_unit in ('reps','seconds','meters','yards','inches','lbs'));
   alter table public.drills    add constraint drills_better_chk check (better in ('higher','lower'));
 exception when duplicate_object then null; end $$;
+
+-- ---------- Flexible column counts (same as migrations/003) ----------
+do $$
+declare r record;
+begin
+  for r in
+    select conname from pg_constraint
+    where conrelid = 'public.session_items'::regclass and contype = 'c'
+      and pg_get_constraintdef(oid) ilike '%slot%'
+  loop
+    execute format('alter table public.session_items drop constraint %I', r.conname);
+  end loop;
+  alter table public.session_items add constraint session_items_slot_positive check (slot >= 1);
+end $$;
