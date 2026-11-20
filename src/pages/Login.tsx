@@ -37,7 +37,12 @@ export default function Login() {
         setNotice('If that email has an account, a reset link is on its way. Open it on this same device.')
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err))
+      const msg = err instanceof Error ? err.message : String(err)
+      setError(/rate limit/i.test(msg)
+        ? 'Too many emails were sent in the last hour (the free email service allows only a few per hour). Please try again in about an hour, or ask a Flight Academy admin to add your account directly.'
+        : /email not confirmed/i.test(msg)
+          ? 'Please confirm your email first. Check your inbox (and spam) for the confirmation link.'
+          : msg)
     } finally {
       setBusy(false)
     }
