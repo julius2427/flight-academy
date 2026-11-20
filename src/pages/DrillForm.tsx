@@ -9,8 +9,12 @@ import StepsEditor, { cleanSteps } from '../components/StepsEditor'
 import CategorySelect from '../components/CategoryPicker'
 import ScoringEditor from '../components/ScoringEditor'
 
-interface Form { title: string; created_on: string; setup: string | null; setup_image: string | null; steps: string[]; exercises: string[]; cats: (number | null)[]; score_unit: Unit; better: Better }
-const blank = (): Form => ({ title: '', created_on: todayISO(), setup: null, setup_image: null, steps: [], exercises: ['', '', '', '', '', ''], cats: [null, null, null], score_unit: 'seconds', better: 'lower' })
+/** An exercise inside the drill: a library exercise (exId) or a typed-in name (custom !== null). */
+interface ExRow { k: string; exId: string; custom: string | null }
+const MAX_EXERCISES = 6 // matches the paper "New Drill" sheet
+const newRow = (): ExRow => ({ k: crypto.randomUUID(), exId: '', custom: null })
+interface Form { title: string; created_on: string; setup: string | null; setup_image: string | null; steps: string[]; exercises: ExRow[]; cats: (number | null)[]; score_unit: Unit; better: Better }
+const blank = (): Form => ({ title: '', created_on: todayISO(), setup: null, setup_image: null, steps: [], exercises: [newRow()], cats: [null, null, null], score_unit: 'seconds', better: 'lower' })
 
 export default function DrillForm() {
   const { id } = useParams()
@@ -29,9 +33,10 @@ export default function DrillForm() {
     supabase.from('drills').select('*, drill_exercises(position, exercise_id, label, exercises(title)), drill_categories(rank, category_id)').eq('id', id).single()
       .then(({ data, error }) => {
         if (error) return setError(error.message)
-        const d = data as Omit<Drill, 'drill_exercises'> & { drill_exercises: { position: number; label: string | null; exercises: { title: string } | null }[] }
-        const ex = ['', '', '', '', '', '']
-        d.drill_exercises.forEach((x) => { ex[x.position - 1] = x.exercises?.title ?? x.label ?? '' })
+        const d = data as Omit<Drill, 'drill_exercises'> & { drill_exercises: { position: number; exercise_id: string | null; label: string | null }[] }
+        const ex: ExRow[] = [...d.drill_exercises].sort((p, q) => p.position - q.position)
+          .map((x) => ({ k: crypto.randomUUID(), exId: x.exercise_id ?? '', custom: x.exercise_id ? null : (x.label ?? '') }))
+        if (!ex.length) ex.push(newRow())
         const cats: (number | null)[] = [null, null, null]
         d.drill_categories?.forEach((c) => { cats[c.rank - 1] = c.category_id })
         setF({ title: d.title, created_on: d.created_on, setup: d.setup, setup_image: d.setup_image, steps: d.steps, exercises: ex, cats, score_unit: d.score_unit ?? 'seconds', better: d.better ?? 'lower' })
@@ -51,11 +56,9 @@ export default function DrillForm() {
         : await supabase.from('drills').insert(base).select('id').single()
       if (res.error) throw res.error
       const drillId = res.data.id as string
-      const byTitle = new Map(library.map((x) => [x.title.toLowerCase(), x.id]))
-      const exRows = f!.exercises.map((t) => t.trim()).filter(Boolean).map((t, i) => {
-        const exId = byTitle.get(t.toLowerCase()) ?? null
-        return { drill_id: drillId, position: i + 1, exercise_id: exId, label: exId ? null : t }
-      })
+      const exRows = f!.exercises
+        .filter((r) => (r.custom !== null ? r.custom.trim() : r.exId))
+        .map((r, i) => ({ drill_id: drillId, position: i + 1, exercise_id: r.custom !== null ? null : r.exId, label: r.custom !== null ? r.custom.trim() : null }))
       const catRows = f!.cats.filter((c): c is number => c != null).map((c, i) => ({ drill_id: drillId, rank: i + 1, category_id: c }))
       const d1 = await supabase.from('drill_exercises').delete().eq('drill_id', drillId)
       if (d1.error) throw d1.error
@@ -95,17 +98,36 @@ export default function DrillForm() {
           <SetupUpload path={f.setup_image} onChange={(p) => set('setup_image', p)} folder="drills" />
         </div>
         <div className="card stack">
-          <h3>Exercises included <span className="muted small" style={{ fontFamily: 'var(--body)', fontWeight: 400 }}>in order of operation; pick from the library or type a new one</span></h3>
-          <datalist id="exercise-library">{library.map((x) => <option key={x.id} value={x.title} />)}</datalist>
-          <div className="steps">
-            {f.exercises.map((t, i) => (
-              <div className="step" key={i}>
-                <b>{i + 1}</b>
-                <input className="input" list="exercise-library" value={t} aria-label={`Exercise ${i + 1}`}
-                  onChange={(e) => { const n = [...f.exercises]; n[i] = e.target.value; set('exercises', n) }} />
-              </div>
-            ))}
+          <div className="spread" style={{ alignItems: 'flex-start' }}>
+            <h3 style={{ margin: 0 }}>Exercises included <span className="muted small" style={{ fontFamily: 'var(--body)', fontWeight: 400 }}>in order of operation</span></h3>
+            <span className="tag tag-gray">{f.exercises.filter((r) => r.exId || r.custom?.trim()).length} of {MAX_EXERCISES}</span>
           </div>
+          <div className="steps">
+            {f.exercises.map((r, i) => {
+              const update = (patch: Partial<ExRow>) => set('exercises', f.exercises.map((x, j) => (j === i ? { ...x, ...patch } : x)))
+              return (
+                <div className="ex-row" key={r.k}>
+                  <b>{i + 1}</b>
+                  <select className={`select ${r.exId || r.custom !== null ? '' : 'is-empty'}`} aria-label={`Exercise ${i + 1}`}
+                    value={r.custom !== null ? '__custom' : r.exId}
+                    onChange={(e) => update(e.target.value === '__custom' ? { exId: '', custom: '' } : { exId: e.target.value, custom: null })}>
+                    <option value="">Choose an exercise…</option>
+                    {library.map((x) => <option key={x.id} value={x.id}>{x.title}</option>)}
+                    <option value="__custom">Other (type a name)…</option>
+                  </select>
+                  <button type="button" className="slot-remove" aria-label={`Remove exercise ${i + 1}`} title="Remove"
+                    onClick={() => { const rest = f.exercises.filter((_, j) => j !== i); set('exercises', rest.length ? rest : [newRow()]) }}>✕</button>
+                  {r.custom !== null && (
+                    <input className="input ex-custom" autoFocus value={r.custom} placeholder="Exercise name (not in the library yet)"
+                      aria-label={`Exercise ${i + 1} name`} onChange={(e) => update({ custom: e.target.value })} />
+                  )}
+                </div>
+              )
+            })}
+          </div>
+          {f.exercises.length < MAX_EXERCISES && (
+            <div><button type="button" className="btn btn-sm" onClick={() => set('exercises', [...f.exercises, newRow()])}>+ Add exercise</button></div>
+          )}
         </div>
         <div className="card stack">
           <h3>Process / actions <span className="muted small" style={{ fontFamily: 'var(--body)', fontWeight: 400 }}>reps, transitions, and other steps</span></h3>

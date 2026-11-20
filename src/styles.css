@@ -418,3 +418,8 @@ tr:last-child td { border-bottom: 0; }
   .report-table th, .report-table td { padding-top: .17rem; padding-bottom: .17rem; }
 }
 @page { margin: 12mm; }
+
+/* Drill form: exercises included */
+.ex-row { display: grid; grid-template-columns: 28px minmax(0, 1fr) 32px; gap: .4rem .5rem; align-items: center; }
+.ex-row > b { font-family: var(--head); color: var(--accent); font-size: 1rem; text-align: center; }
+.ex-row .ex-custom { grid-column: 2 / 3; }
