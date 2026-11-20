@@ -17,6 +17,7 @@ import Sessions from './pages/Sessions'
 import SessionSetup from './pages/SessionSetup'
 import SessionScore from './pages/SessionScore'
 import Coaches from './pages/Coaches'
+import Account from './pages/Account'
 import Reports from './pages/Reports'
 import { AllGrowthReports, AthleteGrowthReport } from './pages/GrowthReports'
 
@@ -53,6 +54,7 @@ export default function App() {
         <Route path="sessions/:id" element={<SessionScore />} />
         <Route path="sessions/:id/setup" element={<SessionSetup />} />
         <Route path="reports" element={<Reports />} />
+        <Route path="account" element={<Account />} />
         <Route path="reports/athletes" element={<AllGrowthReports />} />
         <Route path="athletes/:id/report" element={<AthleteGrowthReport />} />
       </Route>

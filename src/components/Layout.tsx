@@ -27,7 +27,8 @@ export default function Layout() {
           </nav>
           <div className="user">
             {isAdmin && <NavLink to="/app/coaches" className="btn btn-sm hide-desktop">Coaches</NavLink>}
-            <button className="btn btn-sm" onClick={signOut} title={profile?.email ?? ''}>Sign out</button>
+            <NavLink to="/app/account" className="btn btn-sm" title={profile?.email ?? ''}>Account</NavLink>
+            <button className="btn btn-sm" onClick={signOut}>Sign out</button>
           </div>
         </div>
       </header>
