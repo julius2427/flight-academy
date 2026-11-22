@@ -1,5 +1,6 @@
 import { NavLink, Outlet } from 'react-router-dom'
 import { useAuth } from '../lib/auth'
+import DemoNotice from './DemoNotice'
 import { IconChart, IconClipboard, IconCone, IconHome, IconLayers, IconUsers } from './Icons'
 
 const links = [
@@ -34,9 +35,10 @@ export default function Layout() {
       </header>
       {isViewer && (
         <div className="viewer-banner" role="status">
-          <div className="container"><strong>View-only access.</strong> Explore freely. Nothing can be changed. Data shown is sample data.</div>
+          <div className="container"><strong>Demo · view-only.</strong> All athletes and results are made-up sample data.</div>
         </div>
       )}
+      {isViewer && <DemoNotice />}
       <main className="main">
         <div className="container"><Outlet /></div>
       </main>

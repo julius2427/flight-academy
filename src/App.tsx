@@ -18,6 +18,7 @@ import SessionSetup from './pages/SessionSetup'
 import SessionScore from './pages/SessionScore'
 import Coaches from './pages/Coaches'
 import Account from './pages/Account'
+import Demo from './pages/Demo'
 import Reports from './pages/Reports'
 import { AllGrowthReports, AthleteGrowthReport } from './pages/GrowthReports'
 
@@ -41,6 +42,7 @@ export default function App() {
     <Routes>
       <Route path="/" element={<Cover />} />
       <Route path="/login" element={<Login />} />
+      <Route path="/demo" element={<Demo />} />
       <Route path="/reset-password" element={<ResetPassword />} />
 
       <Route path="/app" element={<RequireStaff />}>

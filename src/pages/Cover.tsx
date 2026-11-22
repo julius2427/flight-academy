@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { useAuth } from '../lib/auth'
 import { CATEGORIES } from '../lib/constants'
+import { demoEnabled } from './Demo'
 
 const CONDUCT: { title: string; points: string[] }[] = [
   { title: 'Respect for Others', points: [
@@ -44,6 +45,7 @@ export default function Cover() {
     <>
       <div className="cover-nav">
         <div className="container">
+          {demoEnabled && !session && <Link to="/demo" className="btn btn-sm">View the demo</Link>}
           <Link to={portal} className="btn btn-sm">{session ? 'Open dashboard' : 'Coach login'}</Link>
         </div>
       </div>
@@ -60,7 +62,8 @@ export default function Cover() {
               high-quality training, discipline, respect, and sportsmanship.
             </p>
             <div className="row">
-              <Link to={portal} className="btn btn-primary">Coach portal</Link>
+              {demoEnabled && <Link to="/demo" className="btn btn-primary">View the demo</Link>}
+              <Link to={portal} className={demoEnabled ? 'btn btn-outline' : 'btn btn-primary'}>Coach portal</Link>
             </div>
           </div>
         </div>
