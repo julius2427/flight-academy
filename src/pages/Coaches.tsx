@@ -7,6 +7,7 @@ import { fmtDate } from '../lib/constants'
 
 const ROLES: { value: Role; label: string }[] = [
   { value: 'pending', label: 'Pending (no access)' },
+  { value: 'viewer', label: 'Viewer (read-only demo)' },
   { value: 'coach', label: 'Coach' },
   { value: 'admin', label: 'Admin' },
 ]

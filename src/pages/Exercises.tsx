@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { useAuth } from '../lib/auth'
 import type { Exercise } from '../lib/types'
 import { CATEGORIES, categoryName, fmtNum, scoringText } from '../lib/constants'
 import { IconPlus } from '../components/Icons'
@@ -13,6 +14,7 @@ export const measureSummary = (e: Exercise) => [
 ].filter(Boolean).join(' · ')
 
 export default function Exercises() {
+  const { canEdit } = useAuth()
   const [rows, setRows] = useState<Exercise[] | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [cat, setCat] = useState(0)
@@ -27,7 +29,7 @@ export default function Exercises() {
   return (
     <>
       <PageHead title="Exercises" sub="Single movements, each tied to one development category"
-        actions={<Link to="/app/exercises/new" className="btn btn-primary"><IconPlus /> New exercise</Link>} />
+        actions={canEdit ? <Link to="/app/exercises/new" className="btn btn-primary"><IconPlus /> New exercise</Link> : undefined} />
       <ErrorNote error={error} />
       <input className="input" placeholder="Search exercises…" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Search exercises" style={{ marginBottom: '.75rem' }} />
       <div className="chips" style={{ marginBottom: '1rem' }}>

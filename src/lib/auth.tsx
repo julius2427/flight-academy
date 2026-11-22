@@ -10,6 +10,12 @@ interface AuthState {
   loading: boolean
   isStaff: boolean
   isAdmin: boolean
+  /** Read-only demo/observer access. */
+  isViewer: boolean
+  /** Can see the coach portal (staff or viewer). */
+  canView: boolean
+  /** Can add/edit/delete (staff only). */
+  canEdit: boolean
   refreshProfile: () => Promise<void>
   signOut: () => Promise<void>
 }
@@ -57,6 +63,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     loading: loading || (!!session && profileFor !== session.user.id),
     isStaff: profile?.role === 'coach' || profile?.role === 'admin',
     isAdmin: profile?.role === 'admin',
+    isViewer: profile?.role === 'viewer',
+    canView: profile?.role === 'coach' || profile?.role === 'admin' || profile?.role === 'viewer',
+    canEdit: profile?.role === 'coach' || profile?.role === 'admin',
     refreshProfile: () => loadProfile(session),
     signOut: async () => { await supabase.auth.signOut(); navigate('/') },
   }

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { useAuth } from '../lib/auth'
 import type { Athlete, Session, SessionItem } from '../lib/types'
 import { fmtDate, unitShort } from '../lib/constants'
 import { ErrorNote, PageHead, Spinner } from '../components/Ui'
@@ -9,6 +10,7 @@ const key = (itemId: string, athleteId: string) => `${itemId}|${athleteId}`
 
 export default function SessionScore() {
   const { id } = useParams()
+  const { canEdit } = useAuth()
   const [session, setSession] = useState<Session | null>(null)
   const [items, setItems] = useState<SessionItem[]>([])
   const [athletes, setAthletes] = useState<Athlete[]>([])
@@ -81,7 +83,7 @@ export default function SessionScore() {
   const input = (it: SessionItem, a: Athlete, cls: string, idx?: number) => {
     const k = key(it.id, a.id)
     return (
-      <input className={cls} inputMode="decimal" enterKeyHint="next" value={vals[k] ?? ''} data-idx={idx}
+      <input className={cls} inputMode="decimal" enterKeyHint="next" value={vals[k] ?? ''} data-idx={idx} readOnly={!canEdit}
         aria-label={`${a.first_name} ${a.last_name}: ${it.label} (${it.unit})`}
         onChange={(e) => setVals({ ...vals, [k]: e.target.value.replace(',', '.') })}
         onKeyDown={(e) => {
@@ -102,12 +104,12 @@ export default function SessionScore() {
         back={{ to: '/app/sessions', label: 'Sessions' }}
         title={fmtDate(session.session_date)}
         sub={[session.coach_name && `Coach ${session.coach_name}`, session.location, `${athletes.length} athletes`].filter(Boolean).join(' · ')}
-        actions={<Link to={`/app/sessions/${id}/setup`} className="btn">Edit setup</Link>}
+        actions={canEdit ? <Link to={`/app/sessions/${id}/setup`} className="btn">Edit setup</Link> : undefined}
       />
       {session.notes && <p className="muted">{session.notes}</p>}
 
       {items.length === 0 || athletes.length === 0 ? (
-        <div className="card empty">This session needs at least one drill/exercise and one athlete. <Link to={`/app/sessions/${id}/setup`}>Edit setup</Link></div>
+        <div className="card empty">This session has no drills or athletes yet.{canEdit && <> <Link to={`/app/sessions/${id}/setup`}>Edit setup</Link></>}</div>
       ) : <>
         <div className="chips" style={{ marginBottom: '1rem' }} role="group" aria-label="Entry mode">
           <button className="chip" aria-pressed={mode === 'item'} onClick={() => setMode('item')}>One at a time</button>
@@ -166,7 +168,7 @@ export default function SessionScore() {
           </div>
         )}
 
-        <div className="savebar">
+        {canEdit && <div className="savebar">
           <span className={dirty.length ? '' : 'muted'}>
             {notice && !dirty.length ? notice : dirty.length ? `${dirty.length} unsaved change${dirty.length === 1 ? '' : 's'}` : 'All changes saved'}
           </span>
@@ -176,7 +178,7 @@ export default function SessionScore() {
             )}
             <button className="btn btn-primary" disabled={!dirty.length || busy} onClick={save}>{busy ? 'Saving…' : 'Save'}</button>
           </div>
-        </div>
+        </div>}
         <ErrorNote error={error} />
       </>}
     </>

@@ -1,6 +1,7 @@
 import { Fragment, useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { useAuth } from '../lib/auth'
 import type { Athlete, ResultRow } from '../lib/types'
 import { CATEGORIES, ageFrom, categoryName, fmtDate, fmtNum, isBetter, unitShort } from '../lib/constants'
 import { downloadCsv } from '../lib/csv'
@@ -15,6 +16,7 @@ interface Measure {
 
 export default function AthleteDetail() {
   const { id } = useParams()
+  const { canEdit } = useAuth()
   const [a, setA] = useState<Athlete | null>(null)
   const [rows, setRows] = useState<ResultRow[] | null>(null)
   const [attended, setAttended] = useState<number | null>(null)
@@ -72,7 +74,7 @@ export default function AthleteDetail() {
         actions={<>
           {rows.length > 0 && <button className="btn" onClick={exportCsv}><IconDownload /> CSV</button>}
           <Link to={`/app/athletes/${a.id}/report`} className="btn btn-primary">Growth report</Link>
-          <Link to={`/app/athletes/${a.id}/edit`} className="btn">Edit</Link>
+          {canEdit && <Link to={`/app/athletes/${a.id}/edit`} className="btn">Edit</Link>}
         </>}
       />
       {!a.active && <div className="alert" style={{ marginBottom: '1rem' }}>This athlete is marked inactive.</div>}

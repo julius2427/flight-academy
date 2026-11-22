@@ -9,7 +9,7 @@ import { IconDownload, IconPlus } from '../components/Icons'
 import { ErrorNote, PageHead } from '../components/Ui'
 
 export default function Dashboard() {
-  const { profile } = useAuth()
+  const { profile, canEdit } = useAuth()
   const [counts, setCounts] = useState<Record<string, number | null>>({})
   const [recent, setRecent] = useState<(Session & { session_athletes: { count: number }[] })[]>([])
   const [error, setError] = useState<string | null>(null)
@@ -45,7 +45,7 @@ export default function Dashboard() {
   return (
     <>
       <PageHead title={first ? `Welcome, ${first}` : 'Dashboard'} sub="Forward…Fast"
-        actions={<Link to="/app/sessions/new" className="btn btn-primary"><IconPlus /> New session</Link>} />
+        actions={canEdit ? <Link to="/app/sessions/new" className="btn btn-primary"><IconPlus /> New session</Link> : undefined} />
       <ErrorNote error={error} />
 
       <div className="stats">
@@ -76,10 +76,16 @@ export default function Dashboard() {
           <h2>Quick actions</h2>
           <div className="list">
             <Link to="/app/reports" className="btn btn-block btn-primary">View program report</Link>
-            <Link to="/app/sessions/new" className="btn btn-block">Score a session</Link>
-            <Link to="/app/athletes/new" className="btn btn-block">Add an athlete</Link>
-            <Link to="/app/exercises/new" className="btn btn-block">Create an exercise</Link>
-            <Link to="/app/drills/new" className="btn btn-block">Build a drill</Link>
+            {canEdit ? <>
+              <Link to="/app/sessions/new" className="btn btn-block">Score a session</Link>
+              <Link to="/app/athletes/new" className="btn btn-block">Add an athlete</Link>
+              <Link to="/app/exercises/new" className="btn btn-block">Create an exercise</Link>
+              <Link to="/app/drills/new" className="btn btn-block">Build a drill</Link>
+            </> : <>
+              <Link to="/app/reports/athletes" className="btn btn-block">Individual growth reports</Link>
+              <Link to="/app/athletes" className="btn btn-block">Browse athletes</Link>
+              <Link to="/app/sessions" className="btn btn-block">Browse sessions</Link>
+            </>}
             <button className="btn btn-block" onClick={exportAll}><IconDownload /> Export all results (CSV)</button>
           </div>
         </div>

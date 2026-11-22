@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { useAuth } from '../lib/auth'
 import type { Better, Drill, Exercise, Unit } from '../lib/types'
 import { todayISO } from '../lib/constants'
 import { ErrorNote, Field, PageHead, Spinner } from '../components/Ui'
@@ -18,6 +19,8 @@ const blank = (): Form => ({ title: '', created_on: todayISO(), setup: null, set
 
 export default function DrillForm() {
   const { id } = useParams()
+  const { canEdit } = useAuth()
+  const ro = !canEdit
   const navigate = useNavigate()
   const [f, setF] = useState<Form | null>(id ? null : blank())
   const [library, setLibrary] = useState<Exercise[]>([])
@@ -84,8 +87,9 @@ export default function DrillForm() {
 
   return (
     <>
-      <PageHead title={id ? 'Edit drill' : 'New drill'} back={{ to: '/app/drills', label: 'Drills' }} />
+      <PageHead title={ro ? f.title : id ? 'Edit drill' : 'New drill'} sub={ro ? 'View only' : undefined} back={{ to: '/app/drills', label: 'Drills' }} />
       <form onSubmit={save} className="stack">
+        <fieldset className="stack bare-fieldset" disabled={ro}>
         <div className="card stack">
           <div className="grid-2">
             <Field label="Drill title"><input className="input" required value={f.title} onChange={(e) => set('title', e.target.value)} /></Field>
@@ -144,11 +148,12 @@ export default function DrillForm() {
           ))}
         </div>
         <ScoringEditor unit={f.score_unit} better={f.better} onChange={(u, b) => setF({ ...f, score_unit: u, better: b })} />
+        </fieldset>
         <ErrorNote error={error} />
-        <div className="spread">
+        {!ro && <div className="spread">
           {id ? <button type="button" className="btn btn-danger" onClick={remove}>Delete</button> : <span />}
           <button className="btn btn-primary" disabled={busy}>{busy ? 'Saving…' : 'Save drill'}</button>
-        </div>
+        </div>}
       </form>
     </>
   )

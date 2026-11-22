@@ -59,6 +59,7 @@ Fresh projects only need `supabase/schema.sql`. Projects created earlier should 
 ```bash
 cat ~/Documents/FlightAcademy/supabase/migrations/002-scoring-on-exercises.sql | pbcopy
 cat ~/Documents/FlightAcademy/supabase/migrations/003-flexible-session-columns.sql | pbcopy
+cat ~/Documents/FlightAcademy/supabase/migrations/004-viewer-role.sql | pbcopy
 ```
 
 ## Sample / demo data
@@ -70,6 +71,11 @@ This adds 12 made-up athletes (12U and 14U), 9 weekly sessions, and about 670 re
 ```bash
 cat ~/Documents/FlightAcademy/supabase/sample-data-remove.sql | pbcopy   # paste in Supabase SQL Editor → Run
 ```
+
+## Demo / view-only access
+The **Viewer** role can see everything a coach sees but can't change anything. The database enforces this, not just the app. To demo the coach side, create one shared login (Authentication → Users → Add user, ✅ Auto Confirm), then set its role to **Viewer (read-only demo)** on the Coaches page.
+
+> ⚠ **Before entering real athlete data:** set every Viewer account back to **Pending** (or delete it), then run `sample-data-remove.sql`. Viewers can see whatever is in the database.
 
 ## Moving to a custom domain later
 The build uses relative paths and hash-based routes (`/#/app/...`), so the same build works on any domain.

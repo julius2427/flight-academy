@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { useAuth } from '../lib/auth'
 import type { Exercise } from '../lib/types'
 import { todayISO } from '../lib/constants'
 import { ErrorNote, Field, PageHead, Spinner } from '../components/Ui'
@@ -18,6 +19,8 @@ const blank = (): Form => ({
 
 export default function ExerciseForm() {
   const { id } = useParams()
+  const { canEdit } = useAuth()
+  const ro = !canEdit
   const navigate = useNavigate()
   const [f, setF] = useState<Form | null>(id ? null : blank())
   const [busy, setBusy] = useState(false)
@@ -61,8 +64,9 @@ export default function ExerciseForm() {
 
   return (
     <>
-      <PageHead title={id ? 'Edit exercise' : 'New exercise'} back={{ to: '/app/exercises', label: 'Exercises' }} />
+      <PageHead title={ro ? f.title : id ? 'Edit exercise' : 'New exercise'} sub={ro ? 'View only' : undefined} back={{ to: '/app/exercises', label: 'Exercises' }} />
       <form onSubmit={save} className="stack">
+        <fieldset className="stack bare-fieldset" disabled={ro}>
         <div className="card stack">
           <div className="grid-2">
             <Field label="Exercise title"><input className="input" required value={f.title} onChange={(e) => set('title', e.target.value)} /></Field>
@@ -100,11 +104,12 @@ export default function ExerciseForm() {
           </div>
         </div>
         <ScoringEditor unit={f.score_unit} better={f.better} onChange={(u, b) => setF({ ...f, score_unit: u, better: b })} />
+        </fieldset>
         <ErrorNote error={error} />
-        <div className="spread">
+        {!ro && <div className="spread">
           {id ? <button type="button" className="btn btn-danger" onClick={remove}>Delete</button> : <span />}
           <button className="btn btn-primary" disabled={busy}>{busy ? 'Saving…' : 'Save exercise'}</button>
-        </div>
+        </div>}
       </form>
     </>
   )

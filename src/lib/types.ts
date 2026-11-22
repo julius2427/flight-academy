@@ -1,4 +1,4 @@
-export type Role = 'pending' | 'coach' | 'admin' | 'athlete' | 'guardian'
+export type Role = 'pending' | 'coach' | 'admin' | 'viewer' | 'athlete' | 'guardian'
 
 export interface Profile {
   id: string

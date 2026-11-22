@@ -1,12 +1,14 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { useAuth } from '../lib/auth'
 import type { Athlete } from '../lib/types'
 import { ageFrom } from '../lib/constants'
 import { IconPlus } from '../components/Icons'
 import { ErrorNote, PageHead, Spinner } from '../components/Ui'
 
 export default function Athletes() {
+  const { canEdit } = useAuth()
   const [rows, setRows] = useState<Athlete[] | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [q, setQ] = useState('')
@@ -27,7 +29,7 @@ export default function Athletes() {
   return (
     <>
       <PageHead title="Athletes" sub={rows ? `${rows.filter((r) => r.active).length} active` : undefined}
-        actions={<Link to="/app/athletes/new" className="btn btn-primary"><IconPlus /> Add athlete</Link>} />
+        actions={canEdit ? <Link to="/app/athletes/new" className="btn btn-primary"><IconPlus /> Add athlete</Link> : undefined} />
       <ErrorNote error={error} />
       <div className="row" style={{ marginBottom: '1rem' }}>
         <input className="input" style={{ flex: '1 1 220px' }} placeholder="Search name, sport, position…" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Search athletes" />

@@ -424,3 +424,11 @@ tr:last-child td { border-bottom: 0; }
 .ex-row > b { font-family: var(--head); color: var(--accent); font-size: 1rem; text-align: center; }
 .ex-row .ex-custom { grid-column: 2 / 3; }
 @media (max-width: 459px) { .topbar .brand span { display: none; } .topbar .user .btn { padding: 0 .6rem; } }
+
+/* Read-only (viewer) */
+.viewer-banner { background: var(--warn-soft); border-bottom: 1px solid var(--line); font-size: .85rem; padding: .45rem 0; }
+.bare-fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
+.bare-fieldset:disabled .input, .bare-fieldset:disabled .select, .bare-fieldset:disabled .textarea { opacity: 1; cursor: default; background: var(--surface-2); }
+.bare-fieldset:disabled .btn, .bare-fieldset:disabled .slot-remove { display: none; }
+.bare-fieldset:disabled ::placeholder { color: transparent; }
+.bare-fieldset:disabled .step:has(input:placeholder-shown) { display: none; }

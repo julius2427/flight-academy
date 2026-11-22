@@ -12,7 +12,7 @@ const links = [
 ]
 
 export default function Layout() {
-  const { profile, isAdmin, signOut } = useAuth()
+  const { profile, isAdmin, isViewer, signOut } = useAuth()
   return (
     <>
       <header className="topbar">
@@ -27,11 +27,16 @@ export default function Layout() {
           </nav>
           <div className="user">
             {isAdmin && <NavLink to="/app/coaches" className="btn btn-sm hide-desktop">Coaches</NavLink>}
-            <NavLink to="/app/account" className="btn btn-sm" title={profile?.email ?? ''}>Account</NavLink>
+            {!isViewer && <NavLink to="/app/account" className="btn btn-sm" title={profile?.email ?? ''}>Account</NavLink>}
             <button className="btn btn-sm" onClick={signOut}>Sign out</button>
           </div>
         </div>
       </header>
+      {isViewer && (
+        <div className="viewer-banner" role="status">
+          <div className="container"><strong>View-only access.</strong> Explore freely. Nothing can be changed. Data shown is sample data.</div>
+        </div>
+      )}
       <main className="main">
         <div className="container"><Outlet /></div>
       </main>

@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { useAuth } from '../lib/auth'
 import type { Drill } from '../lib/types'
 import { CATEGORIES, categoryName, scoringText } from '../lib/constants'
 import { IconPlus } from '../components/Icons'
 import { ErrorNote, PageHead, Spinner } from '../components/Ui'
 
 export default function Drills() {
+  const { canEdit } = useAuth()
   const [rows, setRows] = useState<Drill[] | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [cat, setCat] = useState(0)
@@ -22,7 +24,7 @@ export default function Drills() {
   return (
     <>
       <PageHead title="Drills" sub="Sequences of exercises, up to three categories each"
-        actions={<Link to="/app/drills/new" className="btn btn-primary"><IconPlus /> New drill</Link>} />
+        actions={canEdit ? <Link to="/app/drills/new" className="btn btn-primary"><IconPlus /> New drill</Link> : undefined} />
       <ErrorNote error={error} />
       <input className="input" placeholder="Search drills…" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Search drills" style={{ marginBottom: '.75rem' }} />
       <div className="chips" style={{ marginBottom: '1rem' }}>
